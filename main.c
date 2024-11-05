@@ -6,13 +6,10 @@ uint8_t message = 0x00;
 uint8_t PORTF_Interrupt = 0x00;
 void GPIOInterruptHandler();
 
-void delay(int us){
-    NVIC_ST_RELOAD_R = 16*us;
-    NVIC_ST_CTRL_R = 0x00000005;
-    while( (NVIC_ST_CTRL_R & 0x00010000) != 0x00010000 ){;} 
-    NVIC_ST_CTRL_R = 0x00000000;
-}
-void INIT_GPIO_PORTF_REGISTERS(){
+int main(void)
+{
+    SYSCTL_RCGC2_R |= 0x00000020;       /* enable clock to GPIOF */
+    //PORTF_REGISTERS
     GPIO_PORTF_LOCK_R = 0x4C4F434B;     /* unlock commit register */
     GPIO_PORTF_CR_R = 0x1F;             /* make PORTF configurable */
     GPIO_PORTF_DEN_R = 0x1F;            /* set PORTF pins 0 to pins 4 */
@@ -22,25 +19,6 @@ void INIT_GPIO_PORTF_REGISTERS(){
     GPIO_PORTF_IS_R = 0x00; // Set interrupt trigger type to edge-sensitive
     GPIO_PORTF_IEV_R = 0x00; // Set interrupt to trigger on falling edge
     GPIO_PORTF_IM_R = 0x10; // Enable interrupt for pin 4
-}
-void GPIOInterruptHandler(){
-    PORTF_Interrupt = GPIO_PORTF_RIS_R & 0x11; // Check which switch caused the interrupt
-    NVIC_EN0_R = 0x00000000; // 30th bit controls PORTF
-    GPIO_PORTF_IM_R = 0x00; // Mask the interrupts for both switches
-    if (PORTF_Interrupt == 0x01){ // If switch 0 was pressed, reduce brightness
-        GPIO_PORTF_ICR_R = 0x11; // Clear interrupt status for edge-triggered interrupt
-        message = 0xAA;
-    }
-    if (PORTF_Interrupt == 0x10){ // If switch 4 was pressed, reduce brightness
-        GPIO_PORTF_ICR_R = 0x11; // Clear interrupt status
-        message = 0xF0;
-    }
-}
-
-int main(void)
-{
-    SYSCTL_RCGC2_R |= 0x00000020;       /* enable clock to GPIOF */
-    INIT_GPIO_PORTF_REGISTERS();
     SYSCTL_RCGCUART_R |= 0x01; // enabling clock to UART module 0
     SYSCTL_RCGCGPIO_R |= 0x21; // enabling clock to PORTF, A
     GPIO_PORTA_LOCK_R = 0x4C4F434B;     /* unlock commit register */
@@ -90,6 +68,23 @@ int main(void)
     }
     return 0;
 }
+void delay(int us){
+    NVIC_ST_RELOAD_R = 16*us;
+    NVIC_ST_CTRL_R = 0x00000005;
+    while( (NVIC_ST_CTRL_R & 0x00010000) != 0x00010000 ){;} 
+    NVIC_ST_CTRL_R = 0x00000000;
+}
 
-
-
+void GPIOInterruptHandler(){
+    PORTF_Interrupt = GPIO_PORTF_RIS_R & 0x11; // Check which switch caused the interrupt
+    NVIC_EN0_R = 0x00000000; // 30th bit controls PORTF
+    GPIO_PORTF_IM_R = 0x00; // Mask the interrupts for both switches
+    if (PORTF_Interrupt == 0x01){ // If switch 0 was pressed, reduce brightness
+        GPIO_PORTF_ICR_R = 0x11; // Clear interrupt status for edge-triggered interrupt
+        message = 0xAA;
+    }
+    if (PORTF_Interrupt == 0x10){ // If switch 4 was pressed, reduce brightness
+        GPIO_PORTF_ICR_R = 0x11; // Clear interrupt status
+        message = 0xF0;
+    }
+}
