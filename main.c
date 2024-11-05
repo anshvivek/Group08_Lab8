@@ -23,7 +23,7 @@ void INIT_GPIO_PORTF_REGISTERS(){
     GPIO_PORTF_IEV_R = 0x00; // Set interrupt to trigger on falling edge
     GPIO_PORTF_IM_R = 0x10; // Enable interrupt for pin 4
 }
-void GPIOInterrupt(){
+void GPIOInterruptHandler(){
     PORTF_Interrupt = GPIO_PORTF_RIS_R & 0x11; // Check which switch caused the interrupt
     NVIC_EN0_R = 0x00000000; // 30th bit controls PORTF
     GPIO_PORTF_IM_R = 0x00; // Mask the interrupts for both switches
